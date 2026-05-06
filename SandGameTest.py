@@ -33,7 +33,7 @@ class SandGame:
         # Создаем поля
         self.create_fields()
 
-        # Состояние игры
+        # Состояния игры
         self.brush_radius = 5
         self.simulation_speed = 3
         self.sand_color = ti.Vector([0.76, 0.7, 0.5])
@@ -43,7 +43,7 @@ class SandGame:
         self.clumping_state = False
         self.clumping_strength = 0.5
 
-        # Состояние клавиш
+        # Состояния клавиш
         self.previous_c_state = False
         self.previous_s_state = False
         self.previous_r_state = False
@@ -66,10 +66,10 @@ class SandGame:
         self.undo_stack = []  # Стек для хранения состояний
         self.redo_stack = []  # Стек для повтора отмененных действий
         self.max_undo_states = 50  # Максимальное количество сохраняемых состояний
-        self.undo_cooldown = False  # Для предотвращения множественных откатов за один кадр
-        self.last_undo_time = 0  # Временная метка последнего отката
-        self.previous_z_state = False  # Для отслеживания нажатия Z
-        self.previous_ctrl_state = False  # Для отслеживания нажатия Ctrl
+        self.undo_cooldown = False
+        self.last_undo_time = 0
+        self.previous_z_state = False
+        self.previous_ctrl_state = False
 
         # Инициализация
         self.init()
@@ -86,7 +86,6 @@ class SandGame:
         self.image_field = ti.Vector.field(3, dtype=ti.f32, shape=(self.grid_width, self.grid_height))
         self.brush_overlay = ti.Vector.field(3, dtype=ti.f32, shape=(self.grid_width, self.grid_height))
 
-        # Скалярные поля
         self.current_color = ti.Vector.field(3, dtype=ti.f32, shape=())
         self.background_color = ti.Vector.field(3, dtype=ti.f32, shape=())
         self.clumping_enabled = ti.field(dtype=ti.i32, shape=())
@@ -346,7 +345,7 @@ class SandGame:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{screenshots_dir}/sand_game_{timestamp}.png"
 
-        self.render()  # Убеждаемся что image_field обновлен
+        self.render()
         img_data = self.image_field.to_numpy()
         img_data = np.transpose(img_data, (1, 0, 2))
         img_data = np.flipud(img_data)
@@ -476,26 +475,25 @@ class SandGame:
         self.clump_strength[None] = self.clumping_strength
 
     def welcome(self):
-        self.gui.begin("Welcome to Sand Game!", 0.25, 0.25, 0.5, 0.5)
-        self.gui.text("=== Controls ===")
-        self.gui.text("LMB: Add sand")
-        self.gui.text("RMB: Remove sand")
-        self.gui.text("SPACE: Pause/Unpause")
-        self.gui.text("C: Toggle settings")
-        self.gui.text("S: Take screenshot")
-        self.gui.text("R: Reset")
-        self.gui.text("Ctrl+Z: Undo")
-        self.gui.text("Ctrl+S: Save current state")
-        self.gui.text("Ctrl+Y or Ctrl+Shift+Z: Redo")
-        self.gui.text("ESC: Quit")
+        self.gui.begin("Добро пожаловать в Sand Game!", 0.25, 0.25, 0.5, 0.5)
+        self.gui.text("=== Управление ===")
+        self.gui.text("ЛКМ: Добавить песка")
+        self.gui.text("ПКМ: Убрать песок")
+        self.gui.text("SPACE: Пауза")
+        self.gui.text("C: Настройки")
+        self.gui.text("S: Скриншот")
+        self.gui.text("R: Очистить поле")
+        self.gui.text("Ctrl+Z: Назад")
+        self.gui.text("Ctrl+S: Сохранить состояние")
+        self.gui.text("Ctrl+Y or Ctrl+Shift+Z: Вернуть назад")
+        self.gui.text("ESC: Выход")
         self.gui.text("")
-        self.gui.text("=== Tips ===")
-        self.gui.text("- Adjust brush size in settings")
-        self.gui.text("- Change sand color in settings")
-        self.gui.text("- Enable clumping for sticky sand")
+        self.gui.text("=== Советы ===")
+        self.gui.text("- Регулируйте размер и цвет кисти в настройках")
+        self.gui.text("- Вы можете включить слипание песка в настройках")
         self.gui.text("")
 
-        button_pressed = self.gui.button("Start Game")
+        button_pressed = self.gui.button("Начать игру")
         self.gui.end()
         return button_pressed
 
@@ -529,16 +527,14 @@ class SandGame:
             grid_y = max(0, min(grid_y, self.grid_height - 1))
 
             if not welcome_active:
-                # Проверка нажатия Ctrl
+                # Обработка клавиш
                 ctrl_pressed = (self.window.is_pressed(ti.ui.CTRL) or
                                 self.window.is_pressed('ctrl') or
                                 self.window.is_pressed('control'))
 
-                # Проверка нажатия Shift
                 shift_pressed = (self.window.is_pressed(ti.ui.SHIFT) or
                                  self.window.is_pressed('shift'))
 
-                # Обработка клавиш
                 current_c_state = self.window.is_pressed('c') or self.window.is_pressed('C')
                 if current_c_state and not self.previous_c_state:
                     self.show_settings = not self.show_settings
@@ -547,7 +543,6 @@ class SandGame:
                 current_s_state = self.window.is_pressed('s') or self.window.is_pressed('S')
                 if current_s_state and not self.previous_s_state:
                     if ctrl_pressed:
-                        # Ctrl+S - сохраняем состояние вручную
                         self.save_state()
                         print("Состояние сохранено (Ctrl+S)")
                     else:
@@ -556,25 +551,22 @@ class SandGame:
 
                 current_r_state = self.window.is_pressed('r') or self.window.is_pressed('R')
                 if current_r_state and not self.previous_r_state:
-                    if not ctrl_pressed:  # Обычный R - сброс
-                        # Сохраняем состояние перед сбросом
+                    if not ctrl_pressed:
                         self.auto_save_state()
                         self.reset()
                         self.clear_brush()
                 self.previous_r_state = current_r_state
 
-                # Обработка Ctrl+Z (Undo)
                 current_z_state = self.window.is_pressed('z') or self.window.is_pressed('Z')
                 if current_z_state and not self.previous_z_state and ctrl_pressed:
-                    if shift_pressed or ctrl_pressed:  # Ctrl+Shift+Z или Ctrl+Y для Redo
-                        if shift_pressed:  # Ctrl+Shift+Z
+                    if shift_pressed or ctrl_pressed:
+                        if shift_pressed:
                             self.redo()
-                        else:  # Просто Ctrl+Z
+                        else:
                             self.undo()
-                    self.clear_brush()  # Очищаем кисть после отмены/повтора
+                    self.clear_brush()
                 self.previous_z_state = current_z_state
 
-                # Обработка Ctrl+Y (альтернатива для Redo)
                 current_y_state = self.window.is_pressed('y') or self.window.is_pressed('Y')
                 if current_y_state and not hasattr(self, 'previous_y_state'):
                     self.previous_y_state = False
@@ -600,7 +592,7 @@ class SandGame:
                 else:
                     # Рисование песка
                     if self.window.is_pressed(ti.ui.LMB):
-                        # Сохраняем состояние перед добавлением песка (но не слишком часто)
+                        # Сохраняем состояние перед добавлением песка
                         if not hasattr(self, '_last_save_frame') or frame_count - self._last_save_frame > 30:
                             self.auto_save_state()
                             self._last_save_frame = frame_count
@@ -624,7 +616,6 @@ class SandGame:
                     # Сохраняем начальное состояние при старте
                     self.save_state()
 
-            # Рендеринг
             self.render()
             self.canvas.set_image(self.image_field)
 
