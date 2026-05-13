@@ -18,7 +18,6 @@ class SandGame:
         try:
             ti.init(arch=ti.gpu)
         except:
-            print("GPU not available, falling back to CPU")
             ti.init(arch=ti.cpu)
 
         self.EMPTY = 0
@@ -475,25 +474,26 @@ class SandGame:
         self.clump_strength[None] = self.clumping_strength
 
     def welcome(self):
-        self.gui.begin("Добро пожаловать в Sand Game!", 0.25, 0.25, 0.5, 0.5)
-        self.gui.text("=== Управление ===")
-        self.gui.text("ЛКМ: Добавить песка")
-        self.gui.text("ПКМ: Убрать песок")
-        self.gui.text("SPACE: Пауза")
-        self.gui.text("C: Настройки")
-        self.gui.text("S: Скриншот")
-        self.gui.text("R: Очистить поле")
-        self.gui.text("Ctrl+Z: Назад")
-        self.gui.text("Ctrl+S: Сохранить состояние")
-        self.gui.text("Ctrl+Y or Ctrl+Shift+Z: Вернуть назад")
-        self.gui.text("ESC: Выход")
+        self.gui.begin("Welcome to Sand Game!", 0.25, 0.25, 0.5, 0.5)
+        self.gui.text("=== Controls ===")
+        self.gui.text("LMB: Add sand")
+        self.gui.text("RMB: Remove sand")
+        self.gui.text("SPACE: Pause/Unpause")
+        self.gui.text("C: Toggle settings")
+        self.gui.text("S: Take screenshot")
+        self.gui.text("R: Reset")
+        self.gui.text("Ctrl+Z: Undo")
+        self.gui.text("Ctrl+S: Save current state")
+        self.gui.text("Ctrl+Y or Ctrl+Shift+Z: Redo")
+        self.gui.text("ESC: Quit")
         self.gui.text("")
-        self.gui.text("=== Советы ===")
-        self.gui.text("- Регулируйте размер и цвет кисти в настройках")
-        self.gui.text("- Вы можете включить слипание песка в настройках")
+        self.gui.text("=== Tips ===")
+        self.gui.text("- Adjust brush size in settings")
+        self.gui.text("- Change sand color in settings")
+        self.gui.text("- Enable clumping for sticky sand")
         self.gui.text("")
 
-        button_pressed = self.gui.button("Начать игру")
+        button_pressed = self.gui.button("Start Game")
         self.gui.end()
         return button_pressed
 
@@ -544,7 +544,6 @@ class SandGame:
                 if current_s_state and not self.previous_s_state:
                     if ctrl_pressed:
                         self.save_state()
-                        print("Состояние сохранено (Ctrl+S)")
                     else:
                         self.save_screenshot()
                 self.previous_s_state = current_s_state
